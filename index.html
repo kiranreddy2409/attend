@@ -36,11 +36,18 @@ th{background:#e9ecef}
 <h2>Mark Attendance</h2>
 <div class="row">
 <input type="date" id="date">
+
 <select id="subject">
-<option>ML</option><option>DL</option><option>NLP</option>
-<option>SE</option><option>EHFC</option>
-<option>Communication</option><option>IT LAB</option><option>SE LAB</option>
+  <option>Net Sec</option>
+  <option>CIP</option>
+  <option>NLP</option>
+  <option>ML</option>
+  <option>SE</option>
+  <option>SE LAB</option>
+  <option>ML LAB</option>
+  <option>Comm Skills</option>
 </select>
+
 <input type="time" id="start">
 <input type="time" id="end">
 <input type="number" id="hours" min="1" max="4" placeholder="Hours">
@@ -65,9 +72,14 @@ th{background:#e9ecef}
 <h2>Attendance by Subject</h2>
 <div class="row">
 <select id="subjectView">
-<option>ML</option><option>DL</option><option>NLP</option>
-<option>SE</option><option>EHFC</option>
-<option>Communication</option><option>IT LAB</option><option>SE LAB</option>
+  <option>Net Sec</option>
+  <option>CIP</option>
+  <option>NLP</option>
+  <option>ML</option>
+  <option>SE</option>
+  <option>SE LAB</option>
+  <option>ML LAB</option>
+  <option>Comm Skills</option>
 </select>
 <button onclick="viewBySubject()">View Subject</button>
 </div>
@@ -84,13 +96,16 @@ const firebaseConfig={
   projectId:"attendance-25266",
   appId:"1:1066971633644:web:fc7937e57addcaba9dd2c9"
 };
+
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
-
 const col=collection(db,"attendance");
 
 window.save=async(present)=>{
-  if(!date.value||!start.value||!end.value||!hours.value) return alert("Fill all");
+  if(!date.value||!start.value||!end.value||!hours.value){
+    alert("Fill all fields");
+    return;
+  }
   const d=new Date(date.value);
   await addDoc(col,{
     date:date.value,
@@ -176,5 +191,6 @@ window.viewBySubject=async()=>{
   subjectResult.innerHTML=h;
 };
 </script>
+
 </body>
 </html>
