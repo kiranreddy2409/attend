@@ -1,195 +1,192 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Academic Attendance System</title>
+  <meta charset="UTF-8">
+  <title>Task / Expense Tracker</title>
 
-<style>
-body{font-family:Arial;background:#eef2f6;margin:0;padding:20px}
-.container{max-width:1200px;background:#fff;margin:auto;padding:20px;border-radius:8px}
-h2{margin-top:30px}
-.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-input,select,button{padding:8px}
-button{background:#007bff;color:#fff;border:none;border-radius:4px;cursor:pointer}
-button:hover{background:#0056b3}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border:1px solid #bbb;padding:6px;text-align:center}
-th{background:#e9ecef}
-.present{color:green;font-weight:bold}
-.absent{color:red;font-weight:bold}
-</style>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .form-box {
+      background: #fff;
+      padding: 15px;
+      max-width: 900px;
+      margin: auto;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input, select, button {
+      padding: 8px;
+      margin: 5px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+    }
+
+    .completed {
+      background: #d4edda;
+    }
+
+    .pending {
+      background: #fff3cd;
+    }
+
+    .delete-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 8px;
+    }
+
+    .status-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 5px 8px;
+    }
+  </style>
 </head>
 
 <body>
-<div class="container">
 
-<h1>Semester Attendance System</h1>
+<h2>Work / Earnings Tracker</h2>
 
-<!-- SEM START -->
-<h2>Semester Settings</h2>
-<div class="row">
-<label>Semester Start:</label>
-<input type="date" id="semStart" value="2026-01-02">
+<div class="form-box">
+  <input type="number" id="amount" placeholder="Amount">
+  <input type="text" id="purpose" placeholder="Purpose">
+  
+  <select id="type">
+    <option value="To Work">To Work</option>
+    <option value="Earned">Earned</option>
+  </select>
+
+  <input type="date" id="date">
+
+  <button onclick="addTask()">Add</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Amount</th>
+        <th>Purpose</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="taskTable"></tbody>
+  </table>
 </div>
 
-<!-- MARK -->
-<h2>Mark Attendance</h2>
-<div class="row">
-<input type="date" id="date">
+<script>
+  // 🔥 Firebase Config (REPLACE WITH YOUR OWN)
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "XXXXXX",
+    appId: "XXXXXX"
+  };
 
-<select id="subject">
-  <option>Net Sec</option>
-  <option>CIP</option>
-  <option>NLP</option>
-  <option>ML</option>
-  <option>SE</option>
-  <option>SE LAB</option>
-  <option>ML LAB</option>
-  <option>Comm Skills</option>
-</select>
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-<input type="time" id="start">
-<input type="time" id="end">
-<input type="number" id="hours" min="1" max="4" placeholder="Hours">
-<button onclick="save(true)">Present</button>
-<button onclick="save(false)">Absent</button>
-</div>
+  const table = document.getElementById("taskTable");
 
-<!-- SUMMARY -->
-<h2>Generate Summary Report</h2>
-<button onclick="generateSummary()">Generate</button>
-<div id="summary"></div>
+  function addTask() {
+    const amount = amount.value;
+    const purpose = purpose.value;
+    const type = type.value;
+    const date = document.getElementById("date").value;
 
-<!-- MONTH VIEW -->
-<h2>Attendance by Month</h2>
-<div class="row">
-<input type="month" id="monthView">
-<button onclick="viewByMonth()">View Month</button>
-</div>
-<div id="monthResult"></div>
-
-<!-- SUBJECT VIEW -->
-<h2>Attendance by Subject</h2>
-<div class="row">
-<select id="subjectView">
-  <option>Net Sec</option>
-  <option>CIP</option>
-  <option>NLP</option>
-  <option>ML</option>
-  <option>SE</option>
-  <option>SE LAB</option>
-  <option>ML LAB</option>
-  <option>Comm Skills</option>
-</select>
-<button onclick="viewBySubject()">View Subject</button>
-</div>
-<div id="subjectResult"></div>
-
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
-const firebaseConfig={
-  apiKey:"AIzaSyCb5vuVVb6JhYXnQVd_9YfbiSoGI7JC4qk",
-  projectId:"attendance-25266",
-  appId:"1:1066971633644:web:fc7937e57addcaba9dd2c9"
-};
-
-const app=initializeApp(firebaseConfig);
-const db=getFirestore(app);
-const col=collection(db,"attendance");
-
-window.save=async(present)=>{
-  if(!date.value||!start.value||!end.value||!hours.value){
-    alert("Fill all fields");
-    return;
-  }
-  const d=new Date(date.value);
-  await addDoc(col,{
-    date:date.value,
-    day:d.toLocaleDateString("en-US",{weekday:"long"}),
-    month:date.value.slice(0,7),
-    subject:subject.value,
-    startTime:start.value,
-    endTime:end.value,
-    hours:+hours.value,
-    present
-  });
-  alert("Saved");
-};
-
-window.generateSummary=async()=>{
-  const sem=semStart.value;
-  const snap=await getDocs(col);
-  let sub={},mon={};
-
-  snap.forEach(doc=>{
-    const a=doc.data();
-    if(a.date<sem) return;
-
-    sub[a.subject]??={att:0,tot:0};
-    sub[a.subject].tot+=a.hours;
-    if(a.present) sub[a.subject].att+=a.hours;
-
-    mon[a.month]??={att:0,tot:0};
-    mon[a.month].tot+=a.hours;
-    if(a.present) mon[a.month].att+=a.hours;
-  });
-
-  let h="<h3>Subject-wise (Cumulative)</h3><table><tr><th>Subject</th><th>Hours</th><th>%</th></tr>";
-  for(let s in sub){
-    h+=`<tr><td>${s}</td><td>${sub[s].att}/${sub[s].tot}</td>
-    <td>${((sub[s].att/sub[s].tot)*100).toFixed(2)}%</td></tr>`;
-  }
-  h+="</table><h3>Monthly Average (All Subjects)</h3><table><tr><th>Month</th><th>%</th></tr>";
-  for(let m in mon){
-    h+=`<tr><td>${m}</td><td>${((mon[m].att/mon[m].tot)*100).toFixed(2)}%</td></tr>`;
-  }
-  h+="</table>";
-  summary.innerHTML=h;
-};
-
-window.viewByMonth=async()=>{
-  const m=monthView.value;
-  const snap=await getDocs(col);
-  let h="<table><tr><th>Date</th><th>Time</th><th>Subject</th><th>Hours</th><th>Status</th></tr>";
-  snap.forEach(doc=>{
-    const a=doc.data();
-    if(a.month===m){
-      h+=`<tr>
-      <td>${a.date} (${a.day})</td>
-      <td>${a.startTime}-${a.endTime}</td>
-      <td>${a.subject}</td>
-      <td>${a.hours}</td>
-      <td class="${a.present?'present':'absent'}">${a.present?'Present':'Absent'}</td>
-      </tr>`;
+    if (!amount || !purpose || !date) {
+      alert("Fill all fields");
+      return;
     }
-  });
-  h+="</table>";
-  monthResult.innerHTML=h;
-};
 
-window.viewBySubject=async()=>{
-  const s=subjectView.value;
-  const sem=semStart.value;
-  const snap=await getDocs(col);
-  let h="<table><tr><th>Date</th><th>Time</th><th>Hours</th><th>Status</th></tr>";
-  snap.forEach(doc=>{
-    const a=doc.data();
-    if(a.subject===s && a.date>=sem){
-      h+=`<tr>
-      <td>${a.date} (${a.day})</td>
-      <td>${a.startTime}-${a.endTime}</td>
-      <td>${a.hours}</td>
-      <td class="${a.present?'present':'absent'}">${a.present?'Present':'Absent'}</td>
-      </tr>`;
-    }
-  });
-  h+="</table>";
-  subjectResult.innerHTML=h;
-};
+    db.collection("tasks").add({
+      amount,
+      purpose,
+      type,
+      date,
+      status: "Pending",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    document.getElementById("amount").value = "";
+    document.getElementById("purpose").value = "";
+  }
+
+  function renderTask(doc) {
+    const tr = document.createElement("tr");
+    tr.className = doc.data().status.toLowerCase();
+
+    tr.innerHTML = `
+      <td>${doc.data().date}</td>
+      <td>${doc.data().amount}</td>
+      <td>${doc.data().purpose}</td>
+      <td>${doc.data().type}</td>
+      <td>
+        <button class="status-btn" onclick="toggleStatus('${doc.id}', '${doc.data().status}')">
+          ${doc.data().status}
+        </button>
+      </td>
+      <td>
+        <button class="delete-btn" onclick="deleteTask('${doc.id}')">Delete</button>
+      </td>
+    `;
+    table.appendChild(tr);
+  }
+
+  function deleteTask(id) {
+    db.collection("tasks").doc(id).delete();
+  }
+
+  function toggleStatus(id, currentStatus) {
+    const newStatus = currentStatus === "Pending" ? "Completed" : "Pending";
+    db.collection("tasks").doc(id).update({ status: newStatus });
+  }
+
+  // 🔄 Auto load data sorted by date ASC
+  db.collection("tasks")
+    .orderBy("date", "asc")
+    .onSnapshot(snapshot => {
+      table.innerHTML = "";
+      snapshot.forEach(doc => renderTask(doc));
+    });
 </script>
 
 </body>
